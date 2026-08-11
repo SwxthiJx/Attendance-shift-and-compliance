@@ -1,6 +1,3 @@
-# Attendance-shift-and-compliance
-### README.md
-
 # Attendance & Shift Compliance
 
 A backend service that reconciles biometric punches, shift rosters, approved leave, and overtime approvals to calculate payable hours per worker per day and surface attendance/compliance issues for review.
