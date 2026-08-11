@@ -149,17 +149,7 @@ Missing OUT punch
 
 ---
 
-## 5. Ground Truth & Re-runnability
-
-The synthetic data generator first creates a known-correct set of shifts. Punch data is then generated from these shifts with controlled errors such as missing and duplicate punches.
-
-The computed results can therefore be compared against the known ground truth to validate the reconciliation logic.
-
-The same pay period can also be processed repeatedly without creating duplicate payable results or exceptions. This allows corrected source data to be reprocessed safely.
-
----
-
-## 6. Summary
+## 5. Summary
 
 The architecture prioritizes correctness, traceability, and safe handling of uncertain attendance data over unnecessary complexity.
 
