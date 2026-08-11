@@ -159,23 +159,7 @@ The same pay period can also be processed repeatedly without creating duplicate 
 
 ---
 
-## 6. Scope
-
-The following are intentionally excluded:
-
-Real external biometric, HR, leave, and payroll integrations because the project requires simulated sources.
-
-Frontend and supervisor approval UI because they are explicitly outside the project scope.
-
-Payroll payment execution because the service only calculates payable hours.
-
-Labour-law research because only the two compliance rules supplied in the brief are required.
-
-Automatic resolution or approval of exceptions because uncertain attendance data must be surfaced for review.
-
----
-
-## 7. Summary
+## 6. Summary
 
 The architecture prioritizes correctness, traceability, and safe handling of uncertain attendance data over unnecessary complexity.
 
