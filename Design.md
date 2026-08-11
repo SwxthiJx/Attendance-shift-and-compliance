@@ -2,127 +2,150 @@
 
 ## 1. Architecture Overview
 
-The system is designed as a **modular FastAPI application** backed by PostgreSQL.
+The system is designed as a modular FastAPI application backed by PostgreSQL.
 
-```text
-       Simulated Sources
- ┌────────┬────────┬────────┬─────────┐
- │Punches │ Roster │ Leave  │ Overtime│
- └────────┴────────┴────────┴─────────┘
-                 ↓
-            FastAPI / REST
-                 ↓
-             Ingestion
-                 ↓
-            PostgreSQL
-                 ↓
-          Reconciliation
-                 ↓
-       ┌─────────┴─────────┐
-       ↓                   ↓
- Payable Hours      Compliance Rules
-                           ↓
-                    Flags / Exceptions
-                           ↓
-                       Results
+```mermaid
+flowchart TD
+    A[Biometric Punches] --> E[Ingestion Layer]
+    B[Shift Roster] --> E
+    C[Approved Leave] --> E
+    D[Overtime Approvals] --> E
+
+    E --> F[(PostgreSQL)]
+    F --> G[Reconciliation Engine]
+
+    G --> H[Payable Hours]
+    G --> I[Compliance Engine]
+
+    I --> J[Flags]
+    G --> K[Exceptions]
 ```
 
 The main processing stages are:
 
-1. **Ingestion** — validate and store the four sources.
-2. **Reconciliation** — combine source data and calculate payable hours.
-3. **Compliance** — apply configurable rules.
-4. **Results** — return payable hours, flags, and exceptions.
+1. Ingestion — validate and store the four sources.
+2. Reconciliation — combine source data and calculate payable hours.
+3. Compliance — apply the configured compliance rules.
+4. Results — provide payable hours, flags, and exceptions.
 
-A modular monolith is preferred over microservices because the project does not require distributed deployment and the simpler architecture is easier to test and operate.
+A modular monolith is used instead of microservices because the project does not require distributed deployment. This keeps the system simpler to develop, test, and operate.
 
 ---
 
-## 2. Data Model
+## 2. Component Architecture
 
-The main entities are:
+The application separates API handling from business logic and database access.
 
-```text
-Worker
-  │
-  ├── Shift Roster
-  ├── Punch
-  ├── Approved Leave
-  ├── Overtime Approval
-  └── Payable Result
-          └── Exception
+```mermaid
+flowchart TD
+    A[FastAPI] --> B[API Routes]
+
+    B --> C[Ingestion Service]
+    B --> D[Processing Service]
+    B --> E[Results Service]
+
+    C --> F[Validation & Normalization]
+    D --> G[Reconciliation Service]
+    D --> H[Compliance Service]
+
+    C --> I[Repositories]
+    G --> I
+    H --> I
+    E --> I
+
+    I --> J[(PostgreSQL)]
 ```
 
-PostgreSQL is used because these entities have clear relationships and reconciliation requires queries across multiple sources.
+This separation keeps the reconciliation logic independent of HTTP requests, making the core business logic easier to test.
 
 ---
 
-## 3. Reconciliation Design
+## 3. Data Model
 
-For each **worker + work date**, the reconciliation engine evaluates:
+The main entities and their relationships are:
+
+```mermaid
+erDiagram
+    WORKER ||--o{ PUNCH : has
+    WORKER ||--o{ SHIFT_ROSTER : has
+    WORKER ||--o{ APPROVED_LEAVE : has
+    WORKER ||--o{ OVERTIME_APPROVAL : has
+    WORKER ||--o{ PAYABLE_RESULT : has
+    PAYABLE_RESULT ||--o{ EXCEPTION : has
+```
+
+PostgreSQL is used because the four input sources have clear relationships through workers, dates, and shifts, and reconciliation requires combining information across these sources.
+
+---
+
+## 4. Reconciliation Design
+
+For each worker and work date, the reconciliation engine evaluates:
 
 ```text
 Roster
-  +
+   +
 Punches
-  +
+   +
 Leave
-  +
+   +
 Overtime
-       ↓
-Payable hours
-       +
+   ↓
+Payable Hours
+   +
 Flags / Exceptions
 ```
 
 The engine:
 
-* Removes duplicate punches using a configurable time threshold.
-* Pairs valid IN/OUT punches.
-* Handles overnight shifts using the rostered work date.
-* Checks punches against approved leave.
-* Compares actual work beyond the roster with overtime approval.
-* Produces payable hours only where the working interval can be determined safely.
+1. Validates and normalizes source data.
+2. Removes duplicate punches using a configurable time threshold.
+3. Pairs valid IN/OUT punches.
+4. Handles overnight shifts using the rostered work date.
+5. Checks attendance against approved leave.
+6. Compares work beyond the roster with overtime approvals.
+7. Calculates payable hours when the working interval can be determined safely.
+8. Creates flags or exceptions where required.
 
 The reconciliation logic is kept separate from the API layer so it can be unit tested independently.
 
 ---
 
-## 4. Key Constraint-Driven Decisions
+## 5. Key Design Decisions & Trade-offs
 
-### Missing punches
+### Missing Punches
 
-**Constraint:** Workers may forget to punch out; the system must not assume midnight or blindly apply the roster.
+**Constraint:** Workers may forget to punch out. The system must not assume they worked until midnight or blindly apply the rostered shift length.
 
 **Decision:** Treat an unresolved missing IN/OUT punch as an exception.
 
-**Trade-off:** This may delay payment for an unresolved record, but prevents invented hours and directly reduces overpayment risk.
+**Trade-off:** This may delay payment for an unresolved record, but prevents invented hours and reduces the risk of overpayment.
 
-### Duplicate punches
+### Duplicate Punches
 
-**Constraint:** Duplicate punches seconds apart are common.
+**Constraint:** Duplicate punches seconds apart are common at shared terminals.
 
-**Decision:** Deduplicate punches within a configurable interval.
+**Decision:** Deduplicate punches within a configurable time interval.
 
-**Trade-off:** A short configurable threshold handles terminal noise without permanently embedding a specific assumption into business logic.
+**Trade-off:** This handles common terminal duplicates without hardcoding the threshold into the reconciliation logic.
 
 ### Overtime
 
-**Constraint:** Overtime may be worked without approval and must not be silently paid or dropped.
+**Constraint:** Overtime may be worked without prior approval and must not be silently paid or dropped.
 
 **Decision:** Compare actual worked time with overtime approvals and surface unapproved overtime.
 
-**Trade-off:** The system avoids treating unapproved work as automatically approved while preserving visibility for review.
+**Trade-off:** The system does not automatically treat unapproved overtime as approved, while still making the work visible for review.
 
-### Overnight shifts
+### Overnight Shifts
 
 **Constraint:** Shifts can cross midnight and must be attributed to the correct day.
 
-**Decision:** Use the rostered/work date when associating overnight punches rather than simply grouping by calendar date.
+**Decision:** Use the rostered/work date when associating punches with an overnight shift rather than simply grouping punches by calendar date.
 
-### Compliance rules
+### Compliance Rules
 
-**Constraint:** Only two compliance rules exist and they must be configurable.
+**Constraint:** Only two compliance rules are required and they must be configurable.
 
 **Decision:**
 
@@ -133,52 +156,56 @@ MAX_CONSECUTIVE_WORKING_DAYS = 6
 
 The reconciliation logic does not hardcode these values.
 
-### Flags vs exceptions
+### Flags vs Exceptions
 
-**Constraint:** A flag is payable; an exception is not payable until resolved.
+**Constraint:** A flag means the hours are payable, while an exception means the result should not be paid until resolved.
 
-**Decision:** Represent these as separate result states.
+**Decision:** Represent flags and exceptions separately.
 
 Example:
 
 ```text
->10 hour shift
-→ payable
-→ compliance flag
+Shift > 10 hours
+    → Payable
+    → Compliance Flag
 
 Missing OUT punch
-→ unresolved
-→ exception
+    → Unresolved
+    → Exception
 ```
 
 ---
 
-## 5. Ground Truth & Re-runnability
+## 6. Ground Truth & Re-runnability
 
-Correct shifts are generated before biometric errors are introduced. The resulting ground truth provides a reference for validating calculated hours.
+The synthetic data generator first creates a known-correct set of shifts. Punch data is then generated from these shifts with controlled errors such as missing and duplicate punches.
 
-The same pay period can also be processed repeatedly without creating duplicate results or exceptions. This supports correction and reprocessing of source data.
+The computed results can therefore be compared against the known ground truth to validate the reconciliation logic.
+
+The same pay period can also be processed repeatedly without creating duplicate payable results or exceptions. This allows corrected source data to be reprocessed safely.
 
 ---
 
-## 6. Scope
+## 7. Scope
 
-The design intentionally excludes:
+The following are intentionally excluded:
 
-* Real external system integrations
-* Frontend or approval UI
-* Payroll payment execution
-* Labour-law research
-* Automatic resolution of exceptions
+Real external biometric, HR, leave, and payroll integrations because the project requires simulated sources.
 
-These are outside the supplied project requirements.
+Frontend and supervisor approval UI because they are explicitly outside the project scope.
 
-## 7. Summary
+Payroll payment execution because the service only calculates payable hours.
 
-The architecture prioritizes **correctness, traceability, and safe handling of uncertain attendance data** over unnecessary complexity.
+Labour-law research because only the two compliance rules supplied in the brief are required.
+
+Automatic resolution or approval of exceptions because uncertain attendance data must be surfaced for review.
+
+---
+
+## 8. Summary
+
+The architecture prioritizes correctness, traceability, and safe handling of uncertain attendance data over unnecessary complexity.
 
 The main design principle is:
 
 > **Do not invent working hours when the available source data cannot safely establish them.**
-
-This is the level I'd submit: **README ≈ 2 pages, Design Doc ≈ 3–4 pages** depending on formatting. It demonstrates that you understood the constraints without burying the evaluator in unnecessary documentation.
