@@ -32,35 +32,8 @@ A modular monolith is used instead of microservices because the project does not
 
 ---
 
-## 2. Component Architecture
 
-The application separates API handling from business logic and database access.
-
-```mermaid
-flowchart TD
-    A[FastAPI] --> B[API Routes]
-
-    B --> C[Ingestion Service]
-    B --> D[Processing Service]
-    B --> E[Results Service]
-
-    C --> F[Validation & Normalization]
-    D --> G[Reconciliation Service]
-    D --> H[Compliance Service]
-
-    C --> I[Repositories]
-    G --> I
-    H --> I
-    E --> I
-
-    I --> J[(PostgreSQL)]
-```
-
-This separation keeps the reconciliation logic independent of HTTP requests, making the core business logic easier to test.
-
----
-
-## 3. Data Model
+## 2. Data Model
 
 The main entities and their relationships are:
 
@@ -78,7 +51,7 @@ PostgreSQL is used because the four input sources have clear relationships throu
 
 ---
 
-## 4. Reconciliation Design
+## 3. Reconciliation Design
 
 For each worker and work date, the reconciliation engine evaluates:
 
@@ -111,7 +84,7 @@ The reconciliation logic is kept separate from the API layer so it can be unit t
 
 ---
 
-## 5. Key Design Decisions & Trade-offs
+## 4. Key Design Decisions & Trade-offs
 
 ### Missing Punches
 
@@ -176,7 +149,7 @@ Missing OUT punch
 
 ---
 
-## 6. Ground Truth & Re-runnability
+## 5. Ground Truth & Re-runnability
 
 The synthetic data generator first creates a known-correct set of shifts. Punch data is then generated from these shifts with controlled errors such as missing and duplicate punches.
 
@@ -186,7 +159,7 @@ The same pay period can also be processed repeatedly without creating duplicate 
 
 ---
 
-## 7. Scope
+## 6. Scope
 
 The following are intentionally excluded:
 
@@ -202,7 +175,7 @@ Automatic resolution or approval of exceptions because uncertain attendance data
 
 ---
 
-## 8. Summary
+## 7. Summary
 
 The architecture prioritizes correctness, traceability, and safe handling of uncertain attendance data over unnecessary complexity.
 
