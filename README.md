@@ -140,9 +140,6 @@ The following are intentionally excluded:
 | Labour-law research                     | Only the supplied compliance rules are required |
 | Automatic exception approval/resolution | Uncertain data must be surfaced for review      |
 
-## 9. Documentation
-
-See [`docs/DESIGN.md`](docs/DESIGN.md) for the architecture, design choices, and trade-offs.
 
 
 
