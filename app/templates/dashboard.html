@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance & Shift Compliance Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1fr solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background-color: #334155;
+            color: #fff;
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: #475569;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0369a1, #1d4ed8);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-card.blue .value { color: var(--accent-blue); }
+        .stat-card.green .value { color: var(--accent-green); }
+        .stat-card.amber .value { color: var(--accent-amber); }
+        .stat-card.red .value { color: var(--accent-red); }
+        .stat-card.purple .value { color: var(--accent-purple); }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .content-section {
+            display: none;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0f172a;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #33415540;
+            color: var(--text-main);
+        }
+
+        tr:hover td {
+            background-color: #33415530;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-high { background-color: #ef444420; color: #f87171; border: 1px solid #ef444440; }
+        .badge-medium { background-color: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b40; }
+        .badge-info { background-color: #38bdf820; color: #38bdf8; border: 1px solid #38bdf840; }
+        .badge-success { background-color: #22c55e20; color: #4ade80; border: 1px solid #22c55e40; }
+
+        .accuracy-box {
+            background-color: #0f172a;
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .accuracy-box h2 {
+            color: var(--accent-green);
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        .policy-card {
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-amber);
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .policy-card strong {
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>Attendance & Shift Compliance Engine</h1>
+            <div class="subtitle">Multi-source shift reconciliation, compliance auditing & ground-truth validation</div>
+        </div>
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runFullPipeline()">⚡ Run Complete Demo Pipeline</button>
+        </div>
+    </div>
+
+    <div class="policy-card">
+        <strong>Missing Punch Policy Rationale:</strong> Workers missing an IN or OUT punch have unverified shift durations. The engine <em>never</em> invents punch timestamps or defaults to rostered shift length. Instead, an Operational Exception (<code>MISSING_IN</code> / <code>MISSING_OUT</code>) is logged, and <code>payable_hours</code> is held at <code>0.0</code> until explicit supervisor review.
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="label">Total Records Processed</div>
+            <div class="value" id="stat-records">0</div>
+        </div>
+        <div class="stat-card green">
+            <div class="label">Total Payable Hours</div>
+            <div class="value" id="stat-payable">0.0h</div>
+        </div>
+        <div class="stat-card red">
+            <div class="label">Exceptions Detected</div>
+            <div class="value" id="stat-exceptions">0</div>
+        </div>
+        <div class="stat-card amber">
+            <div class="label">Compliance Flags</div>
+            <div class="value" id="stat-flags">0</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="label">Ground Truth Accuracy</div>
+            <div class="value" id="stat-accuracy">100%</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('results')">Payable Hours Results</button>
+        <button class="tab-btn" onclick="switchTab('exceptions')">Exceptions Queue (Payment Hold)</button>
+        <button class="tab-btn" onclick="switchTab('flags')">Compliance Flags (Audit Review)</button>
+        <button class="tab-btn" onclick="switchTab('ground-truth')">Ground Truth Validation</button>
+    </div>
+
+    <!-- Results Tab -->
+    <div id="results-section" class="content-section active">
+        <table>
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Work Date</th>
+                    <th>Rostered Hours</th>
+                    <th>Actual Worked Hours</th>
+                    <th>Payable Hours</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Click "Run Complete Demo Pipeline" to process pay period data.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Exceptions Tab -->
+    <div id="exceptions-section" class="content-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Work Date</th>
+                    <th>Exception Code</th>
+                    <th>Severity</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="exceptions-body">
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No operational exceptions loaded.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Flags Tab -->
+    <div id="flags-section" class="content-section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Work Date</th>
+                    <th>Compliance Rule</th>
+                    <th>Flag Message</th>
+                </tr>
+            </thead>
+            <tbody id="flags-body">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No compliance flags loaded.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Ground Truth Tab -->
+    <div id="ground-truth-section" class="content-section">
+        <div class="accuracy-box">
+            <h2 id="gt-accuracy-header">100.0% Match</h2>
+            <div style="color: var(--text-muted); margin-top: 8px;" id="gt-subtext">Verified 21 generated synthetic shift scenarios against ground truth</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Work Date</th>
+                    <th>Expected Payable</th>
+                    <th>Actual Calculated</th>
+                    <th>Expected Exception</th>
+                    <th>Match Status</th>
+                </tr>
+            </thead>
+            <tbody id="gt-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Run validation pipeline to view scenario comparison.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const PERIOD_ID = "PERIOD_2026_08_A";
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-section`).classList.add('active');
+        }
+
+        async function runFullPipeline() {
+            try {
+                // 1. Generate & Ingest
+                await fetch('/api/v1/periods/generate-and-ingest?seed=42&num_workers=10', { method: 'POST' });
+                
+                // 2. Process Period
+                const procResp = await fetch(`/api/v1/periods/${PERIOD_ID}/process`, { method: 'POST' });
+                const summary = await procResp.json();
+
+                document.getElementById('stat-records').innerText = summary.total_records_processed;
+                document.getElementById('stat-payable').innerText = summary.total_payable_hours + 'h';
+                document.getElementById('stat-exceptions').innerText = summary.total_exceptions;
+                document.getElementById('stat-flags').innerText = summary.total_flags;
+
+                // 3. Fetch Details
+                await loadResults();
+                await loadExceptions();
+                await loadFlags();
+                await loadGroundTruth();
+
+            } catch (err) {
+                alert('Pipeline execution error: ' + err);
+            }
+        }
+
+        async function loadResults() {
+            const resp = await fetch(`/api/v1/results?pay_period_id=${PERIOD_ID}`);
+            const data = await resp.json();
+            const body = document.getElementById('results-body');
+            body.innerHTML = '';
+            
+            data.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>Worker ${r.worker_id}</td>
+                    <td>${r.work_date}</td>
+                    <td>${r.rostered_hours.toFixed(1)}h</td>
+                    <td>${r.actual_worked_hours.toFixed(1)}h</td>
+                    <td><strong style="color: var(--accent-green);">${r.payable_hours.toFixed(1)}h</strong></td>
+                    <td><span class="badge ${r.status === 'PROCESSED' ? 'badge-success' : 'badge-high'}">${r.status}</span></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function loadExceptions() {
+            const resp = await fetch(`/api/v1/exceptions?pay_period_id=${PERIOD_ID}`);
+            const data = await resp.json();
+            const body = document.getElementById('exceptions-body');
+            body.innerHTML = '';
+
+            data.forEach(e => {
+                const tr = document.createElement('tr');
+                const badgeClass = e.severity === 'HIGH' ? 'badge-high' : 'badge-medium';
+                tr.innerHTML = `
+                    <td>Worker ${e.worker_id}</td>
+                    <td>${e.work_date}</td>
+                    <td><code>${e.code}</code></td>
+                    <td><span class="badge ${badgeClass}">${e.severity}</span></td>
+                    <td>${e.message}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function loadFlags() {
+            const resp = await fetch(`/api/v1/flags?pay_period_id=${PERIOD_ID}`);
+            const data = await resp.json();
+            const body = document.getElementById('flags-body');
+            body.innerHTML = '';
+
+            data.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>Worker ${f.worker_id}</td>
+                    <td>${f.work_date}</td>
+                    <td><code>${f.rule_code}</code></td>
+                    <td>${f.message}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function loadGroundTruth() {
+            const resp = await fetch(`/api/v1/ground-truth/compare?pay_period_id=${PERIOD_ID}&seed=42`);
+            const data = await resp.json();
+            
+            document.getElementById('stat-accuracy').innerText = data.accuracy_percentage + '%';
+            document.getElementById('gt-accuracy-header').innerText = data.accuracy_percentage + '% Match';
+            document.getElementById('gt-subtext').innerText = `Matched ${data.matched_scenarios} of ${data.total_scenarios} scenarios perfectly`;
+
+            const body = document.getElementById('gt-body');
+            body.innerHTML = '';
+
+            data.details.forEach(d => {
+                const tr = document.createElement('tr');
+                const isMatch = d.is_match;
+                tr.innerHTML = `
+                    <td>Worker ${d.worker_id}</td>
+                    <td>${d.work_date}</td>
+                    <td>${d.expected_payable_hours.toFixed(1)}h</td>
+                    <td>${d.actual_payable_hours.toFixed(1)}h</td>
+                    <td><code>${d.expected_exception || 'NONE'}</code></td>
+                    <td><span class="badge ${isMatch ? 'badge-success' : 'badge-high'}">${isMatch ? 'PERFECT MATCH' : 'MISMATCH'}</span></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Auto load on open
+        runFullPipeline();
+    </script>
+</body>
+</html>
