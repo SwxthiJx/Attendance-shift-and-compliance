@@ -39,18 +39,9 @@ from app.models import worker, roster, punch, leave, overtime, result, exception
 # Ensure DB tables are created immediately when app starts
 try:
     Base.metadata.create_all(bind=engine)
-    from app.db.session import SessionLocal
-    from app.api.periods import generate_and_ingest_synthetic_data
-    from app.services.period_processor import PayPeriodProcessor
-    
-    db_init = SessionLocal()
-    generate_and_ingest_synthetic_data(seed=42, num_workers=10, db=db_init)
-    processor = PayPeriodProcessor(db_init)
-    processor.process_period(pay_period_id="PERIOD_2026_08_A")
-    db_init.close()
-    print("Auto-populated initial pay period dataset on startup!")
 except Exception as err:
-    print(f"DB Table / Auto-Populate Warning: {err}")
+    print(f"DB Table Creation Warning: {err}")
+
 
 
 from fastapi import Request
