@@ -538,6 +538,8 @@
                     <tr>
                         <th>Worker ID</th>
                         <th>Work Date</th>
+                        <th>Punch IN Time</th>
+                        <th>Punch OUT Time</th>
                         <th>Rostered Hours</th>
                         <th>Actual Worked Hours</th>
                         <th>Payable Hours</th>
@@ -545,10 +547,11 @@
                     </tr>
                 </thead>
                 <tbody id="results-body">
-                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Click "Run Complete Demo Pipeline" to process pay period data.</td></tr>
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Click "Run Complete Demo Pipeline" to process pay period data.</td></tr>
                 </tbody>
             </table>
         </div>
+
 
         <!-- Exceptions Tab -->
         <div id="exceptions-section" class="content-section">
@@ -699,16 +702,20 @@
             
             const list = Array.isArray(data) ? data : [];
             if (list.length === 0) {
-                body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No results found.</td></tr>';
+                body.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No results found.</td></tr>';
                 return;
             }
 
             list.forEach(r => {
                 const tr = document.createElement('tr');
                 const badgeClass = r.status === 'PROCESSED' ? 'badge-success' : 'badge-high';
+                const inStr = r.in_punch_time ? r.in_punch_time : 'MISSING';
+                const outStr = r.out_punch_time ? r.out_punch_time : 'MISSING';
                 tr.innerHTML = `
                     <td><strong>Worker ${r.worker_id}</strong></td>
                     <td><code>${r.work_date}</code></td>
+                    <td><code>${inStr}</code></td>
+                    <td><code>${outStr}</code></td>
                     <td>${(r.rostered_hours || 0).toFixed(1)}h</td>
                     <td>${(r.actual_worked_hours || 0).toFixed(1)}h</td>
                     <td><strong style="color: var(--accent-emerald); font-size: 15px;">${(r.payable_hours || 0).toFixed(1)}h</strong></td>
@@ -716,6 +723,7 @@
                 `;
                 body.appendChild(tr);
             });
+
         }
 
         async function loadExceptions() {
