@@ -390,14 +390,15 @@
             const body = document.getElementById('results-body');
             body.innerHTML = '';
             
-            data.forEach(r => {
+            const list = Array.isArray(data) ? data : [];
+            list.forEach(r => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>Worker ${r.worker_id}</td>
                     <td>${r.work_date}</td>
-                    <td>${r.rostered_hours.toFixed(1)}h</td>
-                    <td>${r.actual_worked_hours.toFixed(1)}h</td>
-                    <td><strong style="color: var(--accent-green);">${r.payable_hours.toFixed(1)}h</strong></td>
+                    <td>${(r.rostered_hours || 0).toFixed(1)}h</td>
+                    <td>${(r.actual_worked_hours || 0).toFixed(1)}h</td>
+                    <td><strong style="color: var(--accent-green);">${(r.payable_hours || 0).toFixed(1)}h</strong></td>
                     <td><span class="badge ${r.status === 'PROCESSED' ? 'badge-success' : 'badge-high'}">${r.status}</span></td>
                 `;
                 body.appendChild(tr);
@@ -410,7 +411,8 @@
             const body = document.getElementById('exceptions-body');
             body.innerHTML = '';
 
-            data.forEach(e => {
+            const list = Array.isArray(data) ? data : [];
+            list.forEach(e => {
                 const tr = document.createElement('tr');
                 const badgeClass = e.severity === 'HIGH' ? 'badge-high' : 'badge-medium';
                 tr.innerHTML = `
@@ -430,7 +432,8 @@
             const body = document.getElementById('flags-body');
             body.innerHTML = '';
 
-            data.forEach(f => {
+            const list = Array.isArray(data) ? data : [];
+            list.forEach(f => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>Worker ${f.worker_id}</td>
@@ -446,21 +449,24 @@
             const resp = await fetch(`/api/v1/ground-truth/compare?pay_period_id=${PERIOD_ID}&seed=42`);
             const data = await resp.json();
             
-            document.getElementById('stat-accuracy').innerText = data.accuracy_percentage + '%';
-            document.getElementById('gt-accuracy-header').innerText = data.accuracy_percentage + '% Match';
-            document.getElementById('gt-subtext').innerText = `Matched ${data.matched_scenarios} of ${data.total_scenarios} scenarios perfectly`;
+            if (data && data.accuracy_percentage !== undefined) {
+                document.getElementById('stat-accuracy').innerText = data.accuracy_percentage + '%';
+                document.getElementById('gt-accuracy-header').innerText = data.accuracy_percentage + '% Match';
+                document.getElementById('gt-subtext').innerText = `Matched ${data.matched_scenarios} of ${data.total_scenarios} scenarios perfectly`;
+            }
 
             const body = document.getElementById('gt-body');
             body.innerHTML = '';
 
-            data.details.forEach(d => {
+            const details = (data && Array.isArray(data.details)) ? data.details : [];
+            details.forEach(d => {
                 const tr = document.createElement('tr');
                 const isMatch = d.is_match;
                 tr.innerHTML = `
                     <td>Worker ${d.worker_id}</td>
                     <td>${d.work_date}</td>
-                    <td>${d.expected_payable_hours.toFixed(1)}h</td>
-                    <td>${d.actual_payable_hours.toFixed(1)}h</td>
+                    <td>${(d.expected_payable_hours || 0).toFixed(1)}h</td>
+                    <td>${(d.actual_payable_hours || 0).toFixed(1)}h</td>
                     <td><code>${d.expected_exception || 'NONE'}</code></td>
                     <td><span class="badge ${isMatch ? 'badge-success' : 'badge-high'}">${isMatch ? 'PERFECT MATCH' : 'MISMATCH'}</span></td>
                 `;
@@ -473,3 +479,4 @@
     </script>
 </body>
 </html>
+
