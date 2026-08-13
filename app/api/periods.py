@@ -10,6 +10,10 @@ from app.models.roster import ShiftRoster
 from app.models.punch import Punch
 from app.models.leave import ApprovedLeave
 from app.models.overtime import OvertimeApproval
+from app.models.result import PayableResult
+from app.models.exception import ExceptionRecord
+from app.models.flag import ComplianceFlag
+
 
 from app.services.custom_ingestor import ingest_custom_dataset
 
@@ -60,54 +64,43 @@ def generate_and_ingest_synthetic_data(
     Helper endpoint: Generates synthetic dataset (with ground truth anomalies)
     and ingests all four sources into PostgreSQL/SQLite database.
     """
+    # Clean DB tables for pure benchmark comparison
+    db.query(ExceptionRecord).delete()
+    db.query(ComplianceFlag).delete()
+    db.query(PayableResult).delete()
+    db.query(Punch).delete()
+    db.query(ShiftRoster).delete()
+    db.query(ApprovedLeave).delete()
+    db.query(OvertimeApproval).delete()
+    db.query(Worker).delete()
+    db.commit()
+
     generator = SyntheticDataGenerator(seed=seed, num_workers=num_workers)
     data = generator.generate()
 
     # Ingest Workers
     for w in data["workers"]:
-        db_worker = db.query(Worker).filter(Worker.worker_code == w["worker_code"]).first()
-        if not db_worker:
-            db.add(Worker(id=w["id"], worker_code=w["worker_code"], name=w["name"], department=w["department"]))
+        db.add(Worker(id=w["id"], worker_code=w["worker_code"], name=w["name"], department=w["department"]))
     db.flush()
 
     # Ingest Rosters
     for r in data["rosters"]:
-        existing_r = db.query(ShiftRoster).filter(
-            ShiftRoster.worker_id == r["worker_id"],
-            ShiftRoster.work_date == r["work_date"]
-        ).first()
-        if not existing_r:
-            db.add(ShiftRoster(**r))
+        db.add(ShiftRoster(**r))
 
     # Ingest Punches
     for p in data["punches"]:
-        existing_p = db.query(Punch).filter(
-            Punch.worker_id == p["worker_id"],
-            Punch.punch_timestamp == p["punch_timestamp"],
-            Punch.punch_type == p["punch_type"]
-        ).first()
-        if not existing_p:
-            db.add(Punch(**p))
+        db.add(Punch(**p))
 
     # Ingest Leaves
     for l in data["leaves"]:
-        existing_l = db.query(ApprovedLeave).filter(
-            ApprovedLeave.worker_id == l["worker_id"],
-            ApprovedLeave.leave_date == l["leave_date"]
-        ).first()
-        if not existing_l:
-            db.add(ApprovedLeave(**l))
+        db.add(ApprovedLeave(**l))
 
     # Ingest Overtimes
     for o in data["overtimes"]:
-        existing_o = db.query(OvertimeApproval).filter(
-            OvertimeApproval.worker_id == o["worker_id"],
-            OvertimeApproval.work_date == o["work_date"]
-        ).first()
-        if not existing_o:
-            db.add(OvertimeApproval(**o))
+        db.add(OvertimeApproval(**o))
 
     db.commit()
+
 
     return {
         "message": "Synthetic dataset generated and ingested successfully",
