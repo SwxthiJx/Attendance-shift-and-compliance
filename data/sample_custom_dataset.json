@@ -100,8 +100,9 @@
     { "worker_id": "W007", "date": "2026-08-07", "shift_start": "09:00", "shift_end": "17:00" },
     { "worker_id": "W007", "date": "2026-08-14", "shift_start": "09:00", "shift_end": "17:00" },
 
-    { "worker_id": "W008", "date": "2026-08-01", "shift_start": "07:00", "shift_end": "18:00" },
-    { "worker_id": "W008", "date": "2026-08-13", "shift_start": "07:00", "shift_end": "18:00" },
+    { "worker_id": "W008", "date": "2026-08-01", "shift_start": "09:00", "shift_end": "17:00" },
+    { "worker_id": "W008", "date": "2026-08-13", "shift_start": "09:00", "shift_end": "17:00" },
+
 
     { "worker_id": "W009", "date": "2026-08-01", "shift_start": "09:00", "shift_end": "17:00" },
     { "worker_id": "W009", "date": "2026-08-02", "shift_start": "09:00", "shift_end": "17:00" },

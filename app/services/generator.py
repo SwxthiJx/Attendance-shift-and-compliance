@@ -159,12 +159,14 @@ class SyntheticDataGenerator:
             "flags": []
         }
 
-        # Worker 9: Shift > 10 Continuous Hours (Aug 9: 11 hours continuous shift)
+        # Worker 9: Shift > 10 Continuous Hours (Aug 9: Rostered 8h 09:00-17:00, Worked 11h 07:00-18:00 with 3h Approved OT)
         w_date = self.start_date + timedelta(days=8)
         start_dt = datetime.combine(w_date, datetime.min.time()).replace(hour=7, minute=0)
         end_dt = start_dt + timedelta(hours=11) # 18:00
-        rosters.append({"worker_id": 9, "work_date": w_date, "start_time": start_dt, "end_time": end_dt, "break_minutes": 0.0})
-        overtimes.append({"worker_id": 9, "work_date": w_date, "approved_hours": 3.0, "reason": "Emergency Shift"})
+        rostered_start = datetime.combine(w_date, datetime.min.time()).replace(hour=9, minute=0)
+        rostered_end = rostered_start + timedelta(hours=8) # 17:00 (8h roster)
+        rosters.append({"worker_id": 9, "work_date": w_date, "start_time": rostered_start, "end_time": rostered_end, "break_minutes": 0.0})
+        overtimes.append({"worker_id": 9, "work_date": w_date, "approved_hours": 3.0, "reason": "Emergency Extended Shift"})
         punches.append({"worker_id": 9, "punch_timestamp": start_dt, "punch_type": "IN", "raw_device_id": "DEV-09"})
         punches.append({"worker_id": 9, "punch_timestamp": end_dt, "punch_type": "OUT", "raw_device_id": "DEV-09"})
         ground_truth[(9, w_date)] = {
@@ -172,6 +174,7 @@ class SyntheticDataGenerator:
             "exceptions": [],
             "flags": ["MAX_CONTINUOUS_SHIFT_HOURS"]
         }
+
 
         # Worker 10: Exceeding 6 Consecutive Working Days (Worked 8 consecutive days: Aug 1 to Aug 8)
         for day_offset in range(8):
