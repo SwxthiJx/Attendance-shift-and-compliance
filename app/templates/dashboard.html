@@ -814,9 +814,18 @@
         }
 
         // Auto load on open
-        document.addEventListener('DOMContentLoaded', () => {
-            runFullPipeline();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadResults();
+            await loadExceptions();
+            await loadFlags();
+            await loadGroundTruth();
+
+            const body = document.getElementById('results-body');
+            if (body && body.innerText.includes('Click "Run Complete Demo Pipeline"')) {
+                runFullPipeline();
+            }
         });
+
     </script>
 </body>
 </html>

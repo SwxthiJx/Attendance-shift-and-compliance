@@ -11,12 +11,22 @@ connect_args = {}
 if db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
-engine = create_engine(
-    db_url,
-    connect_args=connect_args,
-    echo=False
-)
+import os
+os.makedirs("/tmp", exist_ok=True)
 
+try:
+    engine = create_engine(
+        db_url,
+        connect_args=connect_args,
+        echo=False
+    )
+except Exception as err:
+    print(f"Database Engine Fallback Warning: {err}")
+    engine = create_engine(
+        "sqlite:////tmp/attendance.db",
+        connect_args={"check_same_thread": False},
+        echo=False
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -26,5 +36,9 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
+
