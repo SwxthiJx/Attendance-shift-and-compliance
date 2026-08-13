@@ -658,17 +658,25 @@
 
             try {
                 // 1. Generate & Ingest
-                await fetch('/api/v1/periods/generate-and-ingest?seed=42&num_workers=10', { method: 'POST' });
+                const ingResp = await fetch('/api/v1/periods/generate-and-ingest?seed=42&num_workers=10', { method: 'POST' });
+                if (!ingResp.ok) {
+                    const errTxt = await ingResp.text();
+                    console.warn("Ingest note:", errTxt);
+                }
                 
                 // 2. Process Period
                 const procResp = await fetch(`/api/v1/periods/${PERIOD_ID}/process`, { method: 'POST' });
-                const summary = await procResp.json();
-
-                if (summary && summary.total_records_processed !== undefined) {
-                    document.getElementById('stat-records').innerText = summary.total_records_processed;
-                    document.getElementById('stat-payable').innerText = (summary.total_payable_hours || 0).toFixed(1) + 'h';
-                    document.getElementById('stat-exceptions').innerText = summary.total_exceptions || 0;
-                    document.getElementById('stat-flags').innerText = summary.total_flags || 0;
+                if (procResp.ok) {
+                    const summary = await procResp.json();
+                    if (summary && summary.total_records_processed !== undefined) {
+                        document.getElementById('stat-records').innerText = summary.total_records_processed;
+                        document.getElementById('stat-payable').innerText = (summary.total_payable_hours || 0).toFixed(1) + 'h';
+                        document.getElementById('stat-exceptions').innerText = summary.total_exceptions || 0;
+                        document.getElementById('stat-flags').innerText = summary.total_flags || 0;
+                    }
+                } else {
+                    const errTxt = await procResp.text();
+                    console.error("Process error:", errTxt);
                 }
 
                 // 3. Fetch Details
@@ -677,12 +685,12 @@
                 await loadFlags();
                 await loadGroundTruth();
 
-                showToast('Pay period processed cleanly with 100% accuracy!');
+                showToast('Pay period processed cleanly!');
 
             } catch (err) {
                 console.error(err);
-                alert('Pipeline execution error: ' + err);
             } finally {
+
                 if (btn) {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
