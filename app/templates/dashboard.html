@@ -265,11 +265,12 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('results')">Payable Hours Results</button>
-        <button class="tab-btn" onclick="switchTab('exceptions')">Exceptions Queue (Payment Hold)</button>
-        <button class="tab-btn" onclick="switchTab('flags')">Compliance Flags (Audit Review)</button>
-        <button class="tab-btn" onclick="switchTab('ground-truth')">Ground Truth Validation</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'results')">Payable Hours Results</button>
+        <button class="tab-btn" onclick="switchTab(event, 'exceptions')">Exceptions Queue (Payment Hold)</button>
+        <button class="tab-btn" onclick="switchTab(event, 'flags')">Compliance Flags (Audit Review)</button>
+        <button class="tab-btn" onclick="switchTab(event, 'ground-truth')">Ground Truth Validation</button>
     </div>
+
 
     <!-- Results Tab -->
     <div id="results-section" class="content-section active">
@@ -351,15 +352,25 @@
     <script>
         const PERIOD_ID = "PERIOD_2026_08_A";
 
-        function switchTab(tabName) {
+        function switchTab(evt, tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
             
-            event.target.classList.add('active');
-            document.getElementById(`${tabName}-section`).classList.add('active');
+            const targetBtn = evt ? (evt.target || evt.currentTarget) : document.querySelector(`.tab-btn[onclick*="${tabName}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            const section = document.getElementById(`${tabName}-section`);
+            if (section) section.classList.add('active');
         }
 
         async function runFullPipeline() {
+            const btn = document.querySelector('.controls .btn');
+            const originalText = btn ? btn.innerText : '⚡ Run Complete Demo Pipeline';
+            if (btn) {
+                btn.innerText = '⌛ Running Pipeline...';
+                btn.disabled = true;
+            }
+
             try {
                 // 1. Generate & Ingest
                 await fetch('/api/v1/periods/generate-and-ingest?seed=42&num_workers=10', { method: 'POST' });
@@ -368,10 +379,12 @@
                 const procResp = await fetch(`/api/v1/periods/${PERIOD_ID}/process`, { method: 'POST' });
                 const summary = await procResp.json();
 
-                document.getElementById('stat-records').innerText = summary.total_records_processed;
-                document.getElementById('stat-payable').innerText = summary.total_payable_hours + 'h';
-                document.getElementById('stat-exceptions').innerText = summary.total_exceptions;
-                document.getElementById('stat-flags').innerText = summary.total_flags;
+                if (summary && summary.total_records_processed !== undefined) {
+                    document.getElementById('stat-records').innerText = summary.total_records_processed;
+                    document.getElementById('stat-payable').innerText = (summary.total_payable_hours || 0).toFixed(1) + 'h';
+                    document.getElementById('stat-exceptions').innerText = summary.total_exceptions || 0;
+                    document.getElementById('stat-flags').innerText = summary.total_flags || 0;
+                }
 
                 // 3. Fetch Details
                 await loadResults();
@@ -380,7 +393,13 @@
                 await loadGroundTruth();
 
             } catch (err) {
+                console.error(err);
                 alert('Pipeline execution error: ' + err);
+            } finally {
+                if (btn) {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
             }
         }
 
@@ -388,9 +407,15 @@
             const resp = await fetch(`/api/v1/results?pay_period_id=${PERIOD_ID}`);
             const data = await resp.json();
             const body = document.getElementById('results-body');
+            if (!body) return;
             body.innerHTML = '';
             
             const list = Array.isArray(data) ? data : [];
+            if (list.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No results found.</td></tr>';
+                return;
+            }
+
             list.forEach(r => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -409,9 +434,15 @@
             const resp = await fetch(`/api/v1/exceptions?pay_period_id=${PERIOD_ID}`);
             const data = await resp.json();
             const body = document.getElementById('exceptions-body');
+            if (!body) return;
             body.innerHTML = '';
 
             const list = Array.isArray(data) ? data : [];
+            if (list.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No operational exceptions.</td></tr>';
+                return;
+            }
+
             list.forEach(e => {
                 const tr = document.createElement('tr');
                 const badgeClass = e.severity === 'HIGH' ? 'badge-high' : 'badge-medium';
@@ -430,9 +461,15 @@
             const resp = await fetch(`/api/v1/flags?pay_period_id=${PERIOD_ID}`);
             const data = await resp.json();
             const body = document.getElementById('flags-body');
+            if (!body) return;
             body.innerHTML = '';
 
             const list = Array.isArray(data) ? data : [];
+            if (list.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No compliance flags.</td></tr>';
+                return;
+            }
+
             list.forEach(f => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -456,9 +493,15 @@
             }
 
             const body = document.getElementById('gt-body');
+            if (!body) return;
             body.innerHTML = '';
 
             const details = (data && Array.isArray(data.details)) ? data.details : [];
+            if (details.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No scenario details.</td></tr>';
+                return;
+            }
+
             details.forEach(d => {
                 const tr = document.createElement('tr');
                 const isMatch = d.is_match;
@@ -475,8 +518,11 @@
         }
 
         // Auto load on open
-        runFullPipeline();
+        document.addEventListener('DOMContentLoaded', () => {
+            runFullPipeline();
+        });
     </script>
 </body>
 </html>
+
 
