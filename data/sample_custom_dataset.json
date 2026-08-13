@@ -1,0 +1,49 @@
+{
+  "pay_period_id": "CUSTOM_PERIOD_2026_08",
+  "punches": [
+    {
+      "worker_id": "W001",
+      "timestamp": "2026-08-01 09:02",
+      "type": "IN"
+    },
+    {
+      "worker_id": "W001",
+      "timestamp": "2026-08-01 17:01",
+      "type": "OUT"
+    },
+    {
+      "worker_id": "W002",
+      "timestamp": "2026-08-01 09:00",
+      "type": "IN"
+    }
+  ],
+  "rosters": [
+    {
+      "worker_id": "W001",
+      "date": "2026-08-01",
+      "shift_start": "09:00",
+      "shift_end": "17:00"
+    },
+    {
+      "worker_id": "W002",
+      "date": "2026-08-01",
+      "shift_start": "09:00",
+      "shift_end": "17:00"
+    }
+  ],
+  "leaves": [
+    {
+      "worker_id": "W002",
+      "date": "2026-08-01",
+      "leave_type": "FULL_DAY"
+    }
+  ],
+  "overtimes": [
+    {
+      "worker_id": "W001",
+      "date": "2026-08-01",
+      "start": "17:00",
+      "end": "19:00"
+    }
+  ]
+}
