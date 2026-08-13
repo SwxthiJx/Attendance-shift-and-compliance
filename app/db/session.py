@@ -16,17 +16,21 @@ if db_url.startswith("sqlite"):
     if ":memory:" in db_url or db_url == "sqlite://":
         pool_kwargs["poolclass"] = StaticPool
 
+from sqlalchemy import text
+
 try:
     engine = create_engine(db_url, connect_args=connect_args, echo=False)
-    with engine.connect() as conn:
-        pass
+    with engine.begin() as conn:
+        conn.execute(text("CREATE TABLE IF NOT EXISTS _health_check_write (id INT)"))
+        conn.execute(text("DROP TABLE _health_check_write"))
 except Exception as err:
-    print(f"Cloud DB Connection Warning ({err}). Falling back to SQLite /tmp/attendance.db")
+    print(f"Cloud DB Connection/Write Warning ({err}). Falling back to SQLite /tmp/attendance.db")
     engine = create_engine(
         "sqlite:////tmp/attendance.db",
         connect_args={"check_same_thread": False},
         echo=False
     )
+
 
 
 
