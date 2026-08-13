@@ -111,15 +111,10 @@ class PayPeriodProcessor:
                 elif has_flags:
                     status = "HAS_FLAGS"
 
-                in_time_str = rec_shift.in_punch.punch_timestamp.strftime("%Y-%m-%d %H:%M:%S") if rec_shift.in_punch else "MISSING"
-                out_time_str = rec_shift.out_punch.punch_timestamp.strftime("%Y-%m-%d %H:%M:%S") if rec_shift.out_punch else "MISSING"
-
                 db_result = PayableResult(
                     worker_id=worker.id,
                     work_date=rec_shift.work_date,
                     pay_period_id=pay_period_id,
-                    in_punch_time=in_time_str,
-                    out_punch_time=out_time_str,
                     rostered_hours=pdata["rostered_hours"],
                     actual_worked_hours=pdata["actual_worked_hours"],
                     payable_hours=pdata["payable_hours"],
@@ -127,7 +122,6 @@ class PayPeriodProcessor:
                     unapproved_overtime_hours=pdata["unapproved_overtime_hours"],
                     status=status
                 )
-
                 self.db.add(db_result)
                 self.db.flush()
 
