@@ -64,8 +64,10 @@ def generate_and_ingest_synthetic_data(
     Helper endpoint: Generates synthetic dataset (with ground truth anomalies)
     and ingests all four sources into PostgreSQL/SQLite database.
     """
-    from app.db.session import engine, Base
-    Base.metadata.create_all(bind=engine)
+    try:
+        from app.db.session import engine, Base
+        Base.metadata.create_all(bind=engine)
+
 
     # Clean DB tables for pure benchmark comparison
     try:
@@ -139,14 +141,18 @@ def generate_and_ingest_synthetic_data(
 
     db.commit()
 
-    return {
-        "message": "Synthetic dataset generated and ingested successfully",
-        "seed": seed,
-        "counts": {
-            "workers": len(data["workers"]),
-            "rosters": len(data["rosters"]),
-            "punches": len(data["punches"]),
-            "leaves": len(data["leaves"]),
-            "overtimes": len(data["overtimes"])
+        return {
+            "message": "Synthetic dataset generated and ingested successfully",
+            "seed": seed,
+            "counts": {
+                "workers": len(data["workers"]),
+                "rosters": len(data["rosters"]),
+                "punches": len(data["punches"]),
+                "leaves": len(data["leaves"]),
+                "overtimes": len(data["overtimes"])
+            }
         }
-    }
+    except Exception as err:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Data generation/ingestion error: {err}")
+

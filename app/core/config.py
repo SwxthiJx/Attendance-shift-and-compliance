@@ -2,7 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./attendance.db"
+    DATABASE_URL: str = "sqlite:////tmp/attendance.db"
+
     
     # Compliance Engine Configurable Parameters
     MAX_CONTINUOUS_SHIFT_HOURS: float = 10.0
