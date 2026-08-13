@@ -241,6 +241,49 @@
         <strong>Missing Punch Policy Rationale:</strong> Workers missing an IN or OUT punch have unverified shift durations. The engine <em>never</em> invents punch timestamps or defaults to rostered shift length. Instead, an Operational Exception (<code>MISSING_IN</code> / <code>MISSING_OUT</code>) is logged, and <code>payable_hours</code> is held at <code>0.0</code> until explicit supervisor review.
     </div>
 
+    <!-- Biometric Gate Terminal Simulator Widget -->
+    <div style="background-color: var(--card-bg); border: 1px solid var(--accent-blue); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--accent-blue);">💳 Terminal Badge Swipe Simulator (Live Terminal Punch Simulation)</h3>
+            <span style="font-size: 12px; color: var(--text-muted);">Simulates real-time biometric gate swipe event to API</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) gap: 12px; gap: 12px; align-items: center;">
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Worker ID</label>
+                <select id="sim-worker-id" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid var(--border-color); color: #fff; border-radius: 6px;">
+                    <option value="1">Worker 1 (Standard Shift)</option>
+                    <option value="2">Worker 2 (Missing IN Punch)</option>
+                    <option value="3">Worker 3 (Missing OUT Punch)</option>
+                    <option value="4">Worker 4 (Duplicate Punch Test)</option>
+                    <option value="5">Worker 5 (Leave Day Test)</option>
+                    <option value="6">Worker 6 (Overnight Shift)</option>
+                    <option value="7">Worker 7 (Approved Overtime)</option>
+                    <option value="8">Worker 8 (Unapproved Overtime)</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Punch Action</label>
+                <select id="sim-punch-type" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid var(--border-color); color: #fff; border-radius: 6px;">
+                    <option value="IN">PUNCH IN (Arrival)</option>
+                    <option value="OUT">PUNCH OUT (Departure)</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Terminal Device</label>
+                <select id="sim-device-id" style="width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid var(--border-color); color: #fff; border-radius: 6px;">
+                    <option value="GATE_MAIN_01">Gate Main Terminal #01</option>
+                    <option value="GATE_WAREHOUSE_02">Warehouse Terminal #02</option>
+                    <option value="GATE_LOGISTICS_03">Logistics Gate #03</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button class="btn btn-primary" onclick="simulateTerminalSwipe()" style="width: 100%; padding: 10px; margin-top: 18px;">💳 Swipe Badge at Gate</button>
+            </div>
+        </div>
+        <div id="sim-status-msg" style="font-size: 13px; margin-top: 10px; color: var(--accent-green); display: none;"></div>
+    </div>
+
+
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="label">Total Records Processed</div>
@@ -363,7 +406,54 @@
             if (section) section.classList.add('active');
         }
 
+        async function simulateTerminalSwipe() {
+            const workerId = parseInt(document.getElementById('sim-worker-id').value);
+            const punchType = document.getElementById('sim-punch-type').value;
+            const deviceId = document.getElementById('sim-device-id').value;
+            const statusMsg = document.getElementById('sim-status-msg');
+
+            const payload = {
+                worker_id: workerId,
+                punch_timestamp: new Date().toISOString(),
+                punch_type: punchType,
+                raw_device_id: deviceId
+            };
+
+            try {
+                const resp = await fetch('/api/v1/ingest/punches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([payload])
+                });
+
+                if (resp.ok) {
+                    if (statusMsg) {
+                        statusMsg.innerText = `✅ Swiped Badge: Worker ${workerId} registered ${punchType} punch at ${deviceId}!`;
+                        statusMsg.style.display = 'block';
+                    }
+                    // Re-run processing to update calculations live
+                    const procResp = await fetch(`/api/v1/periods/${PERIOD_ID}/process`, { method: 'POST' });
+                    const summary = await procResp.json();
+                    if (summary && summary.total_records_processed !== undefined) {
+                        document.getElementById('stat-records').innerText = summary.total_records_processed;
+                        document.getElementById('stat-payable').innerText = (summary.total_payable_hours || 0).toFixed(1) + 'h';
+                        document.getElementById('stat-exceptions').innerText = summary.total_exceptions || 0;
+                        document.getElementById('stat-flags').innerText = summary.total_flags || 0;
+                    }
+                    await loadResults();
+                    await loadExceptions();
+                    await loadFlags();
+                    setTimeout(() => { if (statusMsg) statusMsg.style.display = 'none'; }, 4000);
+                } else {
+                    alert('Swipe simulation error');
+                }
+            } catch (err) {
+                alert('Terminal error: ' + err);
+            }
+        }
+
         async function runFullPipeline() {
+
             const btn = document.querySelector('.controls .btn');
             const originalText = btn ? btn.innerText : '⚡ Run Complete Demo Pipeline';
             if (btn) {
