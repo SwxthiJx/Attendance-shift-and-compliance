@@ -72,19 +72,40 @@ def generate_and_ingest_synthetic_data(
 
     # Ingest Rosters
     for r in data["rosters"]:
-        db.add(ShiftRoster(**r))
+        existing_r = db.query(ShiftRoster).filter(
+            ShiftRoster.worker_id == r["worker_id"],
+            ShiftRoster.work_date == r["work_date"]
+        ).first()
+        if not existing_r:
+            db.add(ShiftRoster(**r))
 
     # Ingest Punches
     for p in data["punches"]:
-        db.add(Punch(**p))
+        existing_p = db.query(Punch).filter(
+            Punch.worker_id == p["worker_id"],
+            Punch.punch_timestamp == p["punch_timestamp"],
+            Punch.punch_type == p["punch_type"]
+        ).first()
+        if not existing_p:
+            db.add(Punch(**p))
 
     # Ingest Leaves
     for l in data["leaves"]:
-        db.add(ApprovedLeave(**l))
+        existing_l = db.query(ApprovedLeave).filter(
+            ApprovedLeave.worker_id == l["worker_id"],
+            ApprovedLeave.leave_date == l["leave_date"]
+        ).first()
+        if not existing_l:
+            db.add(ApprovedLeave(**l))
 
     # Ingest Overtimes
     for o in data["overtimes"]:
-        db.add(OvertimeApproval(**o))
+        existing_o = db.query(OvertimeApproval).filter(
+            OvertimeApproval.worker_id == o["worker_id"],
+            OvertimeApproval.work_date == o["work_date"]
+        ).first()
+        if not existing_o:
+            db.add(OvertimeApproval(**o))
 
     db.commit()
 
@@ -99,3 +120,5 @@ def generate_and_ingest_synthetic_data(
             "overtimes": len(data["overtimes"])
         }
     }
+
+
