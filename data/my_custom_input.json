@@ -1,0 +1,60 @@
+{
+  "pay_period_id": "MY_TEST_PERIOD_2026",
+  "workers": [
+    {
+      "worker_code": "EMP101",
+      "name": "Sarah Connor (Approved Overtime Test)",
+      "department": "Engineering"
+    },
+    {
+      "worker_code": "EMP102",
+      "name": "David Miller (Missing Out Punch Test)",
+      "department": "Operations"
+    }
+  ],
+  "rosters": [
+    {
+      "worker_code": "EMP101",
+      "work_date": "2026-08-10",
+      "start_time": "2026-08-10T09:00:00",
+      "end_time": "2026-08-10T17:00:00",
+      "break_minutes": 0
+    },
+    {
+      "worker_code": "EMP102",
+      "work_date": "2026-08-10",
+      "start_time": "2026-08-10T09:00:00",
+      "end_time": "2026-08-10T17:00:00",
+      "break_minutes": 0
+    }
+  ],
+  "punches": [
+    {
+      "worker_code": "EMP101",
+      "punch_timestamp": "2026-08-10T08:55:00",
+      "punch_type": "IN",
+      "raw_device_id": "GATE_FRONT"
+    },
+    {
+      "worker_code": "EMP101",
+      "punch_timestamp": "2026-08-10T19:05:00",
+      "punch_type": "OUT",
+      "raw_device_id": "GATE_FRONT"
+    },
+    {
+      "worker_code": "EMP102",
+      "punch_timestamp": "2026-08-10T09:00:00",
+      "punch_type": "IN",
+      "raw_device_id": "GATE_BACK"
+    }
+  ],
+  "leaves": [],
+  "overtimes": [
+    {
+      "worker_code": "EMP101",
+      "work_date": "2026-08-10",
+      "approved_hours": 2.0,
+      "reason": "Emergency System Deployment"
+    }
+  ]
+}
