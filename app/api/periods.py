@@ -68,15 +68,20 @@ def generate_and_ingest_synthetic_data(
     Base.metadata.create_all(bind=engine)
 
     # Clean DB tables for pure benchmark comparison
-    db.query(ExceptionRecord).delete()
-    db.query(ComplianceFlag).delete()
-    db.query(PayableResult).delete()
-    db.query(Punch).delete()
-    db.query(ShiftRoster).delete()
-    db.query(ApprovedLeave).delete()
-    db.query(OvertimeApproval).delete()
-    db.query(Worker).delete()
-    db.commit()
+    try:
+        db.query(ExceptionRecord).delete(synchronize_session=False)
+        db.query(ComplianceFlag).delete(synchronize_session=False)
+        db.query(PayableResult).delete(synchronize_session=False)
+        db.query(Punch).delete(synchronize_session=False)
+        db.query(ShiftRoster).delete(synchronize_session=False)
+        db.query(ApprovedLeave).delete(synchronize_session=False)
+        db.query(OvertimeApproval).delete(synchronize_session=False)
+        db.query(Worker).delete(synchronize_session=False)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        print(f"Cleanup note: {exc}")
+
 
 
     generator = SyntheticDataGenerator(seed=seed, num_workers=num_workers)

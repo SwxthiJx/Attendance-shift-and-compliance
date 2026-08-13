@@ -36,11 +36,14 @@ app.add_middleware(
 from app.db.session import engine, Base
 from app.models import worker, roster, punch, leave, overtime, result, exception, flag
 
-@app.on_event("startup")
-def startup_db_tables():
+# Ensure DB tables are created immediately when app starts
+try:
     Base.metadata.create_all(bind=engine)
+except Exception as err:
+    print(f"DB Table Creation Warning: {err}")
 
 app.include_router(api_router)
+
 
 
 @app.get("/", tags=["Health"])
