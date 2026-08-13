@@ -10,54 +10,64 @@ from app.models.overtime import OvertimeApproval
 def ingest_custom_dataset(db: Session, data: Dict[str, Any]) -> Dict[str, int]:
     """
     Ingests a custom dataset payload containing workers, rosters, punches, leaves, and overtimes.
+    Supports flexible field aliases (timestamp/punch_timestamp, type/punch_type, shift_start/start_time, start/end for OT).
     Returns counts of created records.
     """
     worker_code_to_id = {}
     
-    # 1. Ingest Workers
+    # Helper to resolve or auto-create Worker by worker_code or worker_id
+    def resolve_worker_id(item: Dict[str, Any]) -> int:
+        code = str(item.get("worker_id") or item.get("worker_code") or item.get("worker", "UNKNOWN"))
+        if code in worker_code_to_id:
+            return worker_code_to_id[code]
+        
+        db_w = db.query(Worker).filter((Worker.worker_code == code) | (Worker.id == (int(code) if code.isdigit() else -1))).first()
+        if not db_w:
+            db_w = Worker(
+                worker_code=code,
+                name=f"Worker {code}",
+                department="Operations"
+            )
+            db.add(db_w)
+            db.flush()
+        
+        worker_code_to_id[code] = db_w.id
+        return db_w.id
+
+    # 1. Ingest Workers if explicitly supplied
     workers_input = data.get("workers", [])
     for w in workers_input:
-        code = w["worker_code"]
-        db_worker = db.query(Worker).filter(Worker.worker_code == code).first()
-        if not db_worker:
-            db_worker = Worker(
-                worker_code=code,
-                name=w.get("name", f"Worker {code}"),
-                department=w.get("department", "General")
-            )
-            db.add(db_worker)
-            db.flush()
-        worker_code_to_id[code] = db_worker.id
+        resolve_worker_id(w)
 
-    # Helper function to get worker_id from either integer id or worker_code string
-    def resolve_worker_id(item: Dict[str, Any]) -> int:
-        if "worker_id" in item:
-            return item["worker_id"]
-        elif "worker_code" in item:
-            code = item["worker_code"]
-            if code in worker_code_to_id:
-                return worker_code_to_id[code]
-            db_w = db.query(Worker).filter(Worker.worker_code == code).first()
-            if db_w:
-                worker_code_to_id[code] = db_w.id
-                return db_w.id
-        raise ValueError(f"Could not resolve worker for item: {item}")
-
-    # Helper for parsing datetime strings
-    def parse_dt(val: str) -> datetime:
-        return datetime.fromisoformat(val)
+    # Helper for parsing datetime strings or combining date + HH:MM
+    def parse_dt(val: Any, base_date: date = None) -> datetime:
+        if isinstance(val, datetime):
+            return val
+        val_str = str(val).strip()
+        if "T" in val_str or " " in val_str and len(val_str) > 10:
+            return datetime.fromisoformat(val_str)
+        elif base_date and ":" in val_str:
+            parts = val_str.split(":")
+            return datetime.combine(base_date, datetime.min.time()).replace(hour=int(parts[0]), minute=int(parts[1]))
+        return datetime.fromisoformat(val_str)
 
     # Helper for parsing date strings
-    def parse_d(val: str) -> date:
-        return date.fromisoformat(val)
+    def parse_d(val: Any) -> date:
+        if isinstance(val, date):
+            return val
+        return date.fromisoformat(str(val).strip())
 
     # 2. Ingest Rosters
     rosters_count = 0
     for r in data.get("rosters", []):
         w_id = resolve_worker_id(r)
-        w_date = parse_d(r["work_date"]) if isinstance(r["work_date"], str) else r["work_date"]
-        start_t = parse_dt(r["start_time"]) if isinstance(r["start_time"], str) else r["start_time"]
-        end_t = parse_dt(r["end_time"]) if isinstance(r["end_time"], str) else r["end_time"]
+        w_date = parse_d(r.get("work_date") or r.get("date"))
+        
+        raw_start = r.get("start_time") or r.get("shift_start")
+        raw_end = r.get("end_time") or r.get("shift_end")
+        
+        start_t = parse_dt(raw_start, w_date)
+        end_t = parse_dt(raw_end, w_date)
         break_m = r.get("break_minutes", 0)
 
         db.add(ShiftRoster(
@@ -73,9 +83,10 @@ def ingest_custom_dataset(db: Session, data: Dict[str, Any]) -> Dict[str, int]:
     punches_count = 0
     for p in data.get("punches", []):
         w_id = resolve_worker_id(p)
-        p_ts = parse_dt(p["punch_timestamp"]) if isinstance(p["punch_timestamp"], str) else p["punch_timestamp"]
-        p_type = p["punch_type"]
-        device_id = p.get("raw_device_id", "BIOMETRIC_01")
+        raw_ts = p.get("punch_timestamp") or p.get("timestamp")
+        p_ts = parse_dt(raw_ts)
+        p_type = str(p.get("punch_type") or p.get("type")).upper()
+        device_id = p.get("raw_device_id") or p.get("terminal") or "BIOMETRIC_01"
 
         db.add(Punch(
             worker_id=w_id,
@@ -89,8 +100,8 @@ def ingest_custom_dataset(db: Session, data: Dict[str, Any]) -> Dict[str, int]:
     leaves_count = 0
     for l in data.get("leaves", []):
         w_id = resolve_worker_id(l)
-        l_date = parse_d(l["leave_date"]) if isinstance(l["leave_date"], str) else l["leave_date"]
-        l_type = l.get("leave_type", "PAID_LEAVE")
+        l_date = parse_d(l.get("leave_date") or l.get("date"))
+        l_type = l.get("leave_type", "FULL_DAY")
 
         db.add(ApprovedLeave(
             worker_id=w_id,
@@ -103,9 +114,19 @@ def ingest_custom_dataset(db: Session, data: Dict[str, Any]) -> Dict[str, int]:
     overtimes_count = 0
     for o in data.get("overtimes", []):
         w_id = resolve_worker_id(o)
-        o_date = parse_d(o["work_date"]) if isinstance(o["work_date"], str) else o["work_date"]
-        app_hours = float(o.get("approved_hours", 0.0))
-        reason = o.get("reason", "Operational Overtime")
+        o_date = parse_d(o.get("work_date") or o.get("date"))
+        
+        # Determine approved hours either directly or from start/end times
+        if "approved_hours" in o:
+            app_hours = float(o["approved_hours"])
+        elif "start" in o and "end" in o:
+            ot_start = parse_dt(o["start"], o_date)
+            ot_end = parse_dt(o["end"], o_date)
+            app_hours = round((ot_end - ot_start).total_seconds() / 3600.0, 4)
+        else:
+            app_hours = 0.0
+
+        reason = o.get("reason", "Approved Overtime")
 
         db.add(OvertimeApproval(
             worker_id=w_id,
@@ -124,3 +145,4 @@ def ingest_custom_dataset(db: Session, data: Dict[str, Any]) -> Dict[str, int]:
         "leaves": leaves_count,
         "overtimes": overtimes_count
     }
+
