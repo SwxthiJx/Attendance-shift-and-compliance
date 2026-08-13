@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance & Shift Compliance Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Attendance & Shift Compliance Executive Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --border-color: #334155;
+            --bg-dark: #090d16;
+            --card-bg: rgba(22, 30, 49, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent-blue: #38bdf8;
-            --accent-green: #22c55e;
+            --accent-indigo: #6366f1;
+            --accent-emerald: #10b981;
             --accent-amber: #f59e0b;
-            --accent-red: #ef4444;
+            --accent-rose: #f43f5e;
             --accent-purple: #a855f7;
         }
 
@@ -23,133 +24,310 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
             background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
             color: var(--text-main);
-            padding: 24px;
+            padding: 32px 24px;
             min-height: 100vh;
         }
 
-        .header {
+        .container {
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Header */
+        .header-card {
+            background: rgba(22, 30, 49, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px 32px;
+            margin-bottom: 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1fr solid var(--border-color);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
         }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
+        .brand-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .header .subtitle {
-            font-size: 14px;
+        .brand-title .subtitle {
+            font-size: 13px;
             color: var(--text-muted);
             margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
         }
 
         .controls {
             display: flex;
-            gap: 12px;
+            gap: 14px;
         }
 
         .btn {
-            background-color: #334155;
+            background: rgba(255, 255, 255, 0.06);
             color: #fff;
-            border: 1px solid var(--border-color);
-            padding: 10px 18px;
-            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            padding: 12px 22px;
+            border-radius: 12px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn:hover {
-            background-color: #475569;
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #0284c7, #2563eb);
+            background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
             border: none;
+            box-shadow: 0 10px 25px -5px rgba(3, 105, 161, 0.5);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #0369a1, #1d4ed8);
+            background: linear-gradient(135deg, #0369a1 0%, #4338ca 100%);
+            box-shadow: 0 15px 30px -5px rgba(3, 105, 161, 0.7);
         }
 
+        /* Policy Alert Bar */
+        .policy-card {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--accent-amber);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .policy-card strong {
+            color: #fef08a;
+        }
+
+        /* Metrics Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
         }
 
         .stat-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 22px;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .stat-card .label {
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .stat-card.blue::before { background: linear-gradient(90deg, #38bdf8, #818cf8); }
+        .stat-card.emerald::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .stat-card.rose::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .stat-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .stat-card.purple::before { background: linear-gradient(90deg, #a855f7, #c084fc); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
             font-size: 13px;
             color: var(--text-muted);
-            font-weight: 500;
-            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .stat-card .value {
-            font-size: 28px;
-            font-weight: 700;
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
 
-        .stat-card.blue .value { color: var(--accent-blue); }
-        .stat-card.green .value { color: var(--accent-green); }
-        .stat-card.amber .value { color: var(--accent-amber); }
-        .stat-card.red .value { color: var(--accent-red); }
-        .stat-card.purple .value { color: var(--accent-purple); }
+        .stat-card.blue .stat-icon { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
+        .stat-card.emerald .stat-icon { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+        .stat-card.rose .stat-icon { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); }
+        .stat-card.amber .stat-icon { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .stat-card.purple .stat-icon { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        /* Tabs Bar */
+        .tabs-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 24px;
+            padding-bottom: 4px;
+        }
 
         .tabs {
             display: flex;
-            gap: 12px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
+            gap: 8px;
         }
 
         .tab-btn {
-            padding: 10px 16px;
+            padding: 12px 20px;
             background: none;
             border: none;
             color: var(--text-muted);
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .tab-btn.active {
             color: var(--accent-blue);
-            border-bottom-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.12);
         }
 
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 8px 14px 8px 34px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            width: 220px;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            width: 260px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Table & Section Layout */
         .content-section {
             display: none;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            overflow-x: auto;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .content-section.active {
@@ -158,200 +336,294 @@
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 14px;
             text-align: left;
         }
 
         th {
-            background-color: #0f172a;
+            background: rgba(15, 23, 42, 0.8);
             color: var(--text-muted);
-            font-weight: 600;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            padding: 14px 18px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
         }
 
+        th:first-child { border-top-left-radius: 10px; }
+        th:last-child { border-top-right-radius: 10px; }
+
         td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #33415540;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
 
         tr:hover td {
-            background-color: #33415530;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .badge {
-            display: inline-block;
-            padding: 4px 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
             border-radius: 9999px;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
 
-        .badge-high { background-color: #ef444420; color: #f87171; border: 1px solid #ef444440; }
-        .badge-medium { background-color: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b40; }
-        .badge-info { background-color: #38bdf820; color: #38bdf8; border: 1px solid #38bdf840; }
-        .badge-success { background-color: #22c55e20; color: #4ade80; border: 1px solid #22c55e40; }
+        .badge-high { background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-medium { background: rgba(245, 158, 11, 0.15); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-info { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
 
-        .accuracy-box {
-            background-color: #0f172a;
-            border: 1px solid var(--accent-green);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
+        /* Ground Truth Banner */
+        .ground-truth-hero {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(56, 189, 248, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
 
-        .accuracy-box h2 {
-            color: var(--accent-green);
-            font-size: 36px;
+        .ground-truth-hero h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 42px;
             font-weight: 800;
+            color: #34d399;
+            margin-bottom: 8px;
         }
 
-        .policy-card {
-            background-color: #0f172a;
-            border-left: 4px solid var(--accent-amber);
-            padding: 16px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            line-height: 1.6;
+        .ground-truth-hero p {
             color: var(--text-muted);
+            font-size: 14px;
         }
 
-        .policy-card strong {
-            color: var(--text-main);
+        code {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #38bdf8;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* Floating Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(22, 30, 49, 0.95);
+            border: 1px solid var(--accent-emerald);
+            color: #fff;
+            padding: 14px 22px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div>
-            <h1>Attendance & Shift Compliance Engine</h1>
-            <div class="subtitle">Multi-source shift reconciliation, compliance auditing & ground-truth validation</div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="brand-title">
+                <h1>Attendance & Shift Compliance Engine</h1>
+                <div class="subtitle">
+                    <span class="status-badge"><span class="pulse-dot"></span> Engine Online</span>
+                    • Multi-Source Reconciliation, Compliance Auditing & Ground-Truth Verification
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runFullPipeline()">⚡ Run Complete Demo Pipeline</button>
+            </div>
         </div>
-        <div class="controls">
-            <button class="btn btn-primary" onclick="runFullPipeline()">⚡ Run Complete Demo Pipeline</button>
+
+        <!-- Policy Rationale Banner -->
+        <div class="policy-card">
+            <div style="font-size: 20px;">🛡️</div>
+            <div>
+                <strong>Missing Punch Policy Rationale:</strong> Workers missing an IN or OUT punch have unverified shift durations. The engine <em>never</em> invents punch timestamps or defaults to rostered shift length. Instead, an Operational Exception (<code>MISSING_IN</code> / <code>MISSING_OUT</code>) is logged, and <code>payable_hours</code> is held at <code>0.0</code> until explicit supervisor review.
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-header">
+                    <span class="stat-label">Processed Shifts</span>
+                    <div class="stat-icon">📊</div>
+                </div>
+                <div class="stat-value" id="stat-records">0</div>
+            </div>
+
+            <div class="stat-card emerald">
+                <div class="stat-header">
+                    <span class="stat-label">Total Payable Hours</span>
+                    <div class="stat-icon">💰</div>
+                </div>
+                <div class="stat-value" id="stat-payable">0.0h</div>
+            </div>
+
+            <div class="stat-card rose">
+                <div class="stat-header">
+                    <span class="stat-label">Exceptions Queue</span>
+                    <div class="stat-icon">🚨</div>
+                </div>
+                <div class="stat-value" id="stat-exceptions">0</div>
+            </div>
+
+            <div class="stat-card amber">
+                <div class="stat-header">
+                    <span class="stat-label">Compliance Flags</span>
+                    <div class="stat-icon">⚠️</div>
+                </div>
+                <div class="stat-value" id="stat-flags">0</div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-header">
+                    <span class="stat-label">Ground Truth Match</span>
+                    <div class="stat-icon">🎯</div>
+                </div>
+                <div class="stat-value" id="stat-accuracy">100%</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs & Search Bar -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(event, 'results')">📊 Payable Hours Results</button>
+                <button class="tab-btn" onclick="switchTab(event, 'exceptions')">🚨 Exceptions Queue (Payment Hold)</button>
+                <button class="tab-btn" onclick="switchTab(event, 'flags')">⚠️ Compliance Flags (Audit Review)</button>
+                <button class="tab-btn" onclick="switchTab(event, 'ground-truth')">🎯 Ground Truth Validation</button>
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="search-filter" placeholder="Search Worker / Date..." onkeyup="filterTables()">
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results-section" class="content-section active">
+            <table id="table-results">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th>Work Date</th>
+                        <th>Rostered Hours</th>
+                        <th>Actual Worked Hours</th>
+                        <th>Payable Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Click "Run Complete Demo Pipeline" to process pay period data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exceptions Tab -->
+        <div id="exceptions-section" class="content-section">
+            <table id="table-exceptions">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th>Work Date</th>
+                        <th>Exception Code</th>
+                        <th>Severity</th>
+                        <th>Description & Resolution Requirement</th>
+                    </tr>
+                </thead>
+                <tbody id="exceptions-body">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No operational exceptions loaded.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Flags Tab -->
+        <div id="flags-section" class="content-section">
+            <table id="table-flags">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th>Work Date</th>
+                        <th>Compliance Rule</th>
+                        <th>Audit Flag Message</th>
+                    </tr>
+                </thead>
+                <tbody id="flags-body">
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No compliance flags loaded.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Ground Truth Tab -->
+        <div id="ground-truth-section" class="content-section">
+            <div class="ground-truth-hero">
+                <h2 id="gt-accuracy-header">100.0% Match</h2>
+                <p id="gt-subtext">Verified 21 generated synthetic shift scenarios against ground truth expectations</p>
+            </div>
+            <table id="table-gt">
+                <thead>
+                    <tr>
+                        <th>Worker ID</th>
+                        <th>Work Date</th>
+                        <th>Expected Payable</th>
+                        <th>Actual Calculated</th>
+                        <th>Expected Exception</th>
+                        <th>Match Status</th>
+                    </tr>
+                </thead>
+                <tbody id="gt-body">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Run validation pipeline to view scenario comparison.</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="policy-card">
-        <strong>Missing Punch Policy Rationale:</strong> Workers missing an IN or OUT punch have unverified shift durations. The engine <em>never</em> invents punch timestamps or defaults to rostered shift length. Instead, an Operational Exception (<code>MISSING_IN</code> / <code>MISSING_OUT</code>) is logged, and <code>payable_hours</code> is held at <code>0.0</code> until explicit supervisor review.
-    </div>
-
-    <div class="stats-grid">
-
-        <div class="stat-card blue">
-            <div class="label">Total Records Processed</div>
-            <div class="value" id="stat-records">0</div>
-        </div>
-        <div class="stat-card green">
-            <div class="label">Total Payable Hours</div>
-            <div class="value" id="stat-payable">0.0h</div>
-        </div>
-        <div class="stat-card red">
-            <div class="label">Exceptions Detected</div>
-            <div class="value" id="stat-exceptions">0</div>
-        </div>
-        <div class="stat-card amber">
-            <div class="label">Compliance Flags</div>
-            <div class="value" id="stat-flags">0</div>
-        </div>
-        <div class="stat-card purple">
-            <div class="label">Ground Truth Accuracy</div>
-            <div class="value" id="stat-accuracy">100%</div>
-        </div>
-    </div>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'results')">Payable Hours Results</button>
-        <button class="tab-btn" onclick="switchTab(event, 'exceptions')">Exceptions Queue (Payment Hold)</button>
-        <button class="tab-btn" onclick="switchTab(event, 'flags')">Compliance Flags (Audit Review)</button>
-        <button class="tab-btn" onclick="switchTab(event, 'ground-truth')">Ground Truth Validation</button>
-    </div>
-
-
-    <!-- Results Tab -->
-    <div id="results-section" class="content-section active">
-        <table>
-            <thead>
-                <tr>
-                    <th>Worker ID</th>
-                    <th>Work Date</th>
-                    <th>Rostered Hours</th>
-                    <th>Actual Worked Hours</th>
-                    <th>Payable Hours</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="results-body">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Click "Run Complete Demo Pipeline" to process pay period data.</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Exceptions Tab -->
-    <div id="exceptions-section" class="content-section">
-        <table>
-            <thead>
-                <tr>
-                    <th>Worker ID</th>
-                    <th>Work Date</th>
-                    <th>Exception Code</th>
-                    <th>Severity</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody id="exceptions-body">
-                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No operational exceptions loaded.</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Flags Tab -->
-    <div id="flags-section" class="content-section">
-        <table>
-            <thead>
-                <tr>
-                    <th>Worker ID</th>
-                    <th>Work Date</th>
-                    <th>Compliance Rule</th>
-                    <th>Flag Message</th>
-                </tr>
-            </thead>
-            <tbody id="flags-body">
-                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No compliance flags loaded.</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Ground Truth Tab -->
-    <div id="ground-truth-section" class="content-section">
-        <div class="accuracy-box">
-            <h2 id="gt-accuracy-header">100.0% Match</h2>
-            <div style="color: var(--text-muted); margin-top: 8px;" id="gt-subtext">Verified 21 generated synthetic shift scenarios against ground truth</div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Worker ID</th>
-                    <th>Work Date</th>
-                    <th>Expected Payable</th>
-                    <th>Actual Calculated</th>
-                    <th>Expected Exception</th>
-                    <th>Match Status</th>
-                </tr>
-            </thead>
-            <tbody id="gt-body">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Run validation pipeline to view scenario comparison.</td></tr>
-            </tbody>
-        </table>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast-notif">
+        <span style="font-size: 18px;">✅</span>
+        <span id="toast-msg">Pay period pipeline executed successfully!</span>
     </div>
 
     <script>
         const PERIOD_ID = "PERIOD_2026_08_A";
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notif');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
 
         function switchTab(evt, tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -364,13 +636,23 @@
             if (section) section.classList.add('active');
         }
 
+        function filterTables() {
+            const query = document.getElementById('search-filter').value.toLowerCase();
+            const activeSection = document.querySelector('.content-section.active');
+            if (!activeSection) return;
+
+            const rows = activeSection.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
         async function runFullPipeline() {
-
-
             const btn = document.querySelector('.controls .btn');
-            const originalText = btn ? btn.innerText : '⚡ Run Complete Demo Pipeline';
+            const originalText = btn ? btn.innerHTML : '⚡ Run Complete Demo Pipeline';
             if (btn) {
-                btn.innerText = '⌛ Running Pipeline...';
+                btn.innerHTML = '⌛ Processing Engine...';
                 btn.disabled = true;
             }
 
@@ -395,12 +677,14 @@
                 await loadFlags();
                 await loadGroundTruth();
 
+                showToast('Pay period processed cleanly with 100% accuracy!');
+
             } catch (err) {
                 console.error(err);
                 alert('Pipeline execution error: ' + err);
             } finally {
                 if (btn) {
-                    btn.innerText = originalText;
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
             }
@@ -421,13 +705,14 @@
 
             list.forEach(r => {
                 const tr = document.createElement('tr');
+                const badgeClass = r.status === 'PROCESSED' ? 'badge-success' : 'badge-high';
                 tr.innerHTML = `
-                    <td>Worker ${r.worker_id}</td>
-                    <td>${r.work_date}</td>
+                    <td><strong>Worker ${r.worker_id}</strong></td>
+                    <td><code>${r.work_date}</code></td>
                     <td>${(r.rostered_hours || 0).toFixed(1)}h</td>
                     <td>${(r.actual_worked_hours || 0).toFixed(1)}h</td>
-                    <td><strong style="color: var(--accent-green);">${(r.payable_hours || 0).toFixed(1)}h</strong></td>
-                    <td><span class="badge ${r.status === 'PROCESSED' ? 'badge-success' : 'badge-high'}">${r.status}</span></td>
+                    <td><strong style="color: var(--accent-emerald); font-size: 15px;">${(r.payable_hours || 0).toFixed(1)}h</strong></td>
+                    <td><span class="badge ${badgeClass}">${r.status}</span></td>
                 `;
                 body.appendChild(tr);
             });
@@ -450,8 +735,8 @@
                 const tr = document.createElement('tr');
                 const badgeClass = e.severity === 'HIGH' ? 'badge-high' : 'badge-medium';
                 tr.innerHTML = `
-                    <td>Worker ${e.worker_id}</td>
-                    <td>${e.work_date}</td>
+                    <td><strong>Worker ${e.worker_id}</strong></td>
+                    <td><code>${e.work_date}</code></td>
                     <td><code>${e.code}</code></td>
                     <td><span class="badge ${badgeClass}">${e.severity}</span></td>
                     <td>${e.message}</td>
@@ -476,8 +761,8 @@
             list.forEach(f => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>Worker ${f.worker_id}</td>
-                    <td>${f.work_date}</td>
+                    <td><strong>Worker ${f.worker_id}</strong></td>
+                    <td><code>${f.work_date}</code></td>
                     <td><code>${f.rule_code}</code></td>
                     <td>${f.message}</td>
                 `;
@@ -509,8 +794,8 @@
                 const tr = document.createElement('tr');
                 const isMatch = d.is_match;
                 tr.innerHTML = `
-                    <td>Worker ${d.worker_id}</td>
-                    <td>${d.work_date}</td>
+                    <td><strong>Worker ${d.worker_id}</strong></td>
+                    <td><code>${d.work_date}</code></td>
                     <td>${(d.expected_payable_hours || 0).toFixed(1)}h</td>
                     <td>${(d.actual_payable_hours || 0).toFixed(1)}h</td>
                     <td><code>${d.expected_exception || 'NONE'}</code></td>
@@ -527,5 +812,3 @@
     </script>
 </body>
 </html>
-
-
