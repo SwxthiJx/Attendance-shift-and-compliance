@@ -17,12 +17,9 @@ if db_url.startswith("sqlite"):
         pool_kwargs["poolclass"] = StaticPool
 
 try:
-    if "sqlite" in db_url:
-        engine = create_engine(db_url, connect_args={"check_same_thread": False}, echo=False)
-    else:
-        engine = create_engine(db_url, connect_args={"connect_timeout": 3}, echo=False)
-        with engine.connect() as conn:
-            pass
+    engine = create_engine(db_url, connect_args=connect_args, echo=False)
+    with engine.connect() as conn:
+        pass
 except Exception as err:
     print(f"Cloud DB Connection Warning ({err}). Falling back to SQLite /tmp/attendance.db")
     engine = create_engine(
@@ -30,6 +27,7 @@ except Exception as err:
         connect_args={"check_same_thread": False},
         echo=False
     )
+
 
 
 
