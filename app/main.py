@@ -33,7 +33,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.db.session import engine, Base
+from app.models import worker, roster, punch, leave, overtime, result, exception, flag
+
+@app.on_event("startup")
+def startup_db_tables():
+    Base.metadata.create_all(bind=engine)
+
 app.include_router(api_router)
+
 
 @app.get("/", tags=["Health"])
 def root():

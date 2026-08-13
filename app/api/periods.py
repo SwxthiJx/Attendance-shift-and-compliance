@@ -64,6 +64,9 @@ def generate_and_ingest_synthetic_data(
     Helper endpoint: Generates synthetic dataset (with ground truth anomalies)
     and ingests all four sources into PostgreSQL/SQLite database.
     """
+    from app.db.session import engine, Base
+    Base.metadata.create_all(bind=engine)
+
     # Clean DB tables for pure benchmark comparison
     db.query(ExceptionRecord).delete()
     db.query(ComplianceFlag).delete()
@@ -74,6 +77,7 @@ def generate_and_ingest_synthetic_data(
     db.query(OvertimeApproval).delete()
     db.query(Worker).delete()
     db.commit()
+
 
     generator = SyntheticDataGenerator(seed=seed, num_workers=num_workers)
     data = generator.generate()
