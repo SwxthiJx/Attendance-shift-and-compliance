@@ -64,10 +64,8 @@ def generate_and_ingest_synthetic_data(
     Helper endpoint: Generates synthetic dataset (with ground truth anomalies)
     and ingests all four sources into PostgreSQL/SQLite database.
     """
-    try:
-        from app.db.session import engine, Base
-        Base.metadata.create_all(bind=engine)
-
+    from app.db.session import engine, Base
+    Base.metadata.create_all(bind=engine)
 
     # Clean DB tables for pure benchmark comparison
     try:
@@ -84,62 +82,61 @@ def generate_and_ingest_synthetic_data(
         db.rollback()
         print(f"Cleanup note: {exc}")
 
+    try:
+        generator = SyntheticDataGenerator(seed=seed, num_workers=num_workers)
+        data = generator.generate()
 
+        # Ingest Workers
+        worker_map = {}
+        for w in data["workers"]:
+            db_w = db.query(Worker).filter(Worker.worker_code == w["worker_code"]).first()
+            if not db_w:
+                db_w = Worker(worker_code=w["worker_code"], name=w["name"], department=w["department"])
+                db.add(db_w)
+                db.flush()
+            worker_map[w["id"]] = db_w.id
 
-    generator = SyntheticDataGenerator(seed=seed, num_workers=num_workers)
-    data = generator.generate()
+        # Ingest Rosters
+        for r in data["rosters"]:
+            w_id = worker_map.get(r["worker_id"], r["worker_id"])
+            db.add(ShiftRoster(
+                worker_id=w_id,
+                work_date=r["work_date"],
+                start_time=r["start_time"],
+                end_time=r["end_time"],
+                break_minutes=r.get("break_minutes", 0)
+            ))
 
-    # Ingest Workers
-    worker_map = {}
-    for w in data["workers"]:
-        db_w = db.query(Worker).filter(Worker.worker_code == w["worker_code"]).first()
-        if not db_w:
-            db_w = Worker(worker_code=w["worker_code"], name=w["name"], department=w["department"])
-            db.add(db_w)
-            db.flush()
-        worker_map[w["id"]] = db_w.id
+        # Ingest Punches
+        for p in data["punches"]:
+            w_id = worker_map.get(p["worker_id"], p["worker_id"])
+            db.add(Punch(
+                worker_id=w_id,
+                punch_timestamp=p["punch_timestamp"],
+                punch_type=p["punch_type"],
+                raw_device_id=p.get("raw_device_id", "BIOMETRIC_01")
+            ))
 
-    # Ingest Rosters
-    for r in data["rosters"]:
-        w_id = worker_map.get(r["worker_id"], r["worker_id"])
-        db.add(ShiftRoster(
-            worker_id=w_id,
-            work_date=r["work_date"],
-            start_time=r["start_time"],
-            end_time=r["end_time"],
-            break_minutes=r.get("break_minutes", 0)
-        ))
+        # Ingest Leaves
+        for l in data["leaves"]:
+            w_id = worker_map.get(l["worker_id"], l["worker_id"])
+            db.add(ApprovedLeave(
+                worker_id=w_id,
+                leave_date=l["leave_date"],
+                leave_type=l.get("leave_type", "PAID_LEAVE")
+            ))
 
-    # Ingest Punches
-    for p in data["punches"]:
-        w_id = worker_map.get(p["worker_id"], p["worker_id"])
-        db.add(Punch(
-            worker_id=w_id,
-            punch_timestamp=p["punch_timestamp"],
-            punch_type=p["punch_type"],
-            raw_device_id=p.get("raw_device_id", "BIOMETRIC_01")
-        ))
+        # Ingest Overtimes
+        for o in data["overtimes"]:
+            w_id = worker_map.get(o["worker_id"], o["worker_id"])
+            db.add(OvertimeApproval(
+                worker_id=w_id,
+                work_date=o["work_date"],
+                approved_hours=o["approved_hours"],
+                reason=o.get("reason", "Approved Overtime")
+            ))
 
-    # Ingest Leaves
-    for l in data["leaves"]:
-        w_id = worker_map.get(l["worker_id"], l["worker_id"])
-        db.add(ApprovedLeave(
-            worker_id=w_id,
-            leave_date=l["leave_date"],
-            leave_type=l.get("leave_type", "PAID_LEAVE")
-        ))
-
-    # Ingest Overtimes
-    for o in data["overtimes"]:
-        w_id = worker_map.get(o["worker_id"], o["worker_id"])
-        db.add(OvertimeApproval(
-            worker_id=w_id,
-            work_date=o["work_date"],
-            approved_hours=o["approved_hours"],
-            reason=o.get("reason", "Approved Overtime")
-        ))
-
-    db.commit()
+        db.commit()
 
         return {
             "message": "Synthetic dataset generated and ingested successfully",
@@ -155,4 +152,5 @@ def generate_and_ingest_synthetic_data(
     except Exception as err:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Data generation/ingestion error: {err}")
+
 
